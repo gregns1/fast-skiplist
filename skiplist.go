@@ -21,7 +21,7 @@ func (list *SkipList) Front() *Element {
 // If the key exists, it updates the value in the existing node.
 // Returns a pointer to the new element.
 // Locking is optimistic and happens only after searching.
-func (list *SkipList) Set(key float64, value interface{}) *Element {
+func (list *SkipList) Set(key uint64, value interface{}) *Element {
 	list.mutex.Lock()
 	defer list.mutex.Unlock()
 
@@ -52,7 +52,7 @@ func (list *SkipList) Set(key float64, value interface{}) *Element {
 
 // Get finds an element by key. It returns element pointer if found, nil if not found.
 // Locking is optimistic and happens only after searching with a fast check for deletion after locking.
-func (list *SkipList) Get(key float64) *Element {
+func (list *SkipList) Get(key uint64) *Element {
 	list.mutex.Lock()
 	defer list.mutex.Unlock()
 
@@ -68,6 +68,7 @@ func (list *SkipList) Get(key float64) *Element {
 		}
 	}
 
+	// thin this is what we chnage for ranges
 	if next != nil && next.key <= key {
 		return next
 	}
@@ -78,7 +79,7 @@ func (list *SkipList) Get(key float64) *Element {
 // Remove deletes an element from the list.
 // Returns removed element pointer if found, nil if not found.
 // Locking is optimistic and happens only after searching with a fast check on adjacent nodes after locking.
-func (list *SkipList) Remove(key float64) *Element {
+func (list *SkipList) Remove(key uint64) *Element {
 	list.mutex.Lock()
 	defer list.mutex.Unlock()
 	prevs := list.getPrevElementNodes(key)
@@ -100,7 +101,7 @@ func (list *SkipList) Remove(key float64) *Element {
 // Finds the previous nodes on each level relative to the current Element and
 // caches them. This approach is similar to a "search finger" as described by Pugh:
 // http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.17.524
-func (list *SkipList) getPrevElementNodes(key float64) []*elementNode {
+func (list *SkipList) getPrevElementNodes(key uint64) []*elementNode {
 	var prev *elementNode = &list.elementNode
 	var next *Element
 

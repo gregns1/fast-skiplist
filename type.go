@@ -5,18 +5,24 @@ import (
 	"sync"
 )
 
+type SkippedSequenceEntry struct {
+	start     uint64
+	end       uint64
+	timestamp int64
+}
+
 type elementNode struct {
 	next []*Element
 }
 
 type Element struct {
 	elementNode
-	key   float64
+	key   uint64
 	value interface{}
 }
 
 // Key allows retrieval of the key for a given Element
-func (e *Element) Key() float64 {
+func (e *Element) Key() uint64 {
 	return e.key
 }
 
@@ -30,6 +36,11 @@ func (e *Element) Value() interface{} {
 func (element *Element) Next() *Element {
 	return element.next[0]
 }
+
+//
+//func (element *Element) IsRange() bool {
+//	return element.value.start != element.value.end
+//}
 
 type SkipList struct {
 	elementNode

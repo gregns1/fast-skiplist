@@ -15,7 +15,7 @@ func init() {
 	benchList = New()
 
 	for i := 0; i <= 10000000; i++ {
-		benchList.Set(float64(i), [1]byte{})
+		benchList.Set(uint64(i), [1]byte{})
 	}
 
 	// Display the sizes of our basic structs
@@ -113,7 +113,7 @@ func TestBasicIntCRUD(t *testing.T) {
 }
 
 func TestChangeLevel(t *testing.T) {
-	var i float64
+	var i uint64
 	list := New()
 
 	if list.maxLevel != DefaultMaxLevel {
@@ -136,7 +136,7 @@ func TestChangeLevel(t *testing.T) {
 	}
 
 	for c := list.Front(); c != nil; c = c.Next() {
-		if c.key*10 != c.value.(float64) {
+		if c.key*10 != c.value.(uint64) {
 			t.Fatal("wrong list element value")
 		}
 	}
@@ -167,14 +167,14 @@ func TestConcurrency(t *testing.T) {
 	wg.Add(2)
 	go func() {
 		for i := 0; i < 100000; i++ {
-			list.Set(float64(i), i)
+			list.Set(uint64(i), i)
 		}
 		wg.Done()
 	}()
 
 	go func() {
 		for i := 0; i < 100000; i++ {
-			list.Get(float64(i))
+			list.Get(uint64(i))
 		}
 		wg.Done()
 	}()
@@ -190,7 +190,7 @@ func BenchmarkIncSet(b *testing.B) {
 	list := New()
 
 	for i := 0; i < b.N; i++ {
-		list.Set(float64(i), [1]byte{})
+		list.Set(uint64(i), [1]byte{})
 	}
 
 	b.SetBytes(int64(b.N))
@@ -199,7 +199,7 @@ func BenchmarkIncSet(b *testing.B) {
 func BenchmarkIncGet(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		res := benchList.Get(float64(i))
+		res := benchList.Get(uint64(i))
 		if res == nil {
 			b.Fatal("failed to Get an element that should exist")
 		}
@@ -213,7 +213,7 @@ func BenchmarkDecSet(b *testing.B) {
 	list := New()
 
 	for i := b.N; i > 0; i-- {
-		list.Set(float64(i), [1]byte{})
+		list.Set(uint64(i), [1]byte{})
 	}
 
 	b.SetBytes(int64(b.N))
@@ -222,7 +222,7 @@ func BenchmarkDecSet(b *testing.B) {
 func BenchmarkDecGet(b *testing.B) {
 	b.ReportAllocs()
 	for i := b.N; i > 0; i-- {
-		res := benchList.Get(float64(i))
+		res := benchList.Get(uint64(i))
 		if res == nil {
 			b.Fatal("failed to Get an element that should exist", i)
 		}
