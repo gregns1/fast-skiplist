@@ -14,6 +14,13 @@ const (
 
 // Front returns the head node of the list.
 func (list *SkipList) Front() *Element {
+	list.mutex.RLock()
+	defer list.mutex.RUnlock()
+	return list.next[0]
+}
+
+// Front returns the head node of the list without acquiring mutex.
+func (list *SkipList) _front() *Element {
 	return list.next[0]
 }
 
@@ -132,31 +139,30 @@ func (list *SkipList) Remove(key SkippedSequenceEntry) *Element {
 			list.Length--
 			// return removed element
 			return element
-		} else {
-			// subset of element to remove/split
-			if key.Start == element.key.Start {
-				element.key = SkippedSequenceEntry{Start: key.End + 1, End: element.key.End, Timestamp: element.key.Timestamp}
-				list.NumSequencesInList -= key.GetNumSequencesInEntry()
-				// return non nil elem as we have found item
-				return &Element{}
-			}
-			if key.End == element.key.End {
-				element.key = SkippedSequenceEntry{Start: element.key.Start, End: key.Start - 1, Timestamp: element.key.Timestamp}
-				list.NumSequencesInList -= key.GetNumSequencesInEntry()
-				// return non nil elem as we have found item
-				return &Element{}
-			}
-			// need to split current element around incoming key
-			newEntryKey := SkippedSequenceEntry{Start: key.End + 1, End: element.key.End, Timestamp: element.key.Timestamp}
-			newCurrElemKey := SkippedSequenceEntry{Start: element.key.Start, End: key.Start - 1, Timestamp: element.key.Timestamp}
-			element.key = newCurrElemKey
-			// insert new element
-			list._set(newEntryKey)
-			// update stats
+		}
+		// subset of element to remove/split
+		if key.Start == element.key.Start {
+			element.key = SkippedSequenceEntry{Start: key.End + 1, End: element.key.End, Timestamp: element.key.Timestamp}
 			list.NumSequencesInList -= key.GetNumSequencesInEntry()
-
+			// return non nil elem as we have found item
 			return &Element{}
 		}
+		if key.End == element.key.End {
+			element.key = SkippedSequenceEntry{Start: element.key.Start, End: key.Start - 1, Timestamp: element.key.Timestamp}
+			list.NumSequencesInList -= key.GetNumSequencesInEntry()
+			// return non nil elem as we have found item
+			return &Element{}
+		}
+		// need to split current element around incoming key
+		newEntryKey := SkippedSequenceEntry{Start: key.End + 1, End: element.key.End, Timestamp: element.key.Timestamp}
+		newCurrElemKey := SkippedSequenceEntry{Start: element.key.Start, End: key.Start - 1, Timestamp: element.key.Timestamp}
+		element.key = newCurrElemKey
+		// insert new element
+		list._set(newEntryKey)
+		// update stats
+		list.NumSequencesInList -= key.GetNumSequencesInEntry()
+
+		return &Element{}
 	} else if element != nil {
 		var removedSeqs bool
 		for e := element; e != nil; e = e.Next() {
@@ -210,24 +216,23 @@ func (list *SkipList) _remove(key SkippedSequenceEntry) *Element {
 			}
 			list.Length--
 			return element
-		} else {
-			if key.Start == element.key.Start {
-				element.key = SkippedSequenceEntry{Start: key.End + 1, End: element.key.End, Timestamp: element.key.Timestamp}
-				// return non nil elem as we have found item
-				return &Element{}
-			}
-			if key.End == element.key.End {
-				element.key = SkippedSequenceEntry{Start: element.key.Start, End: key.Start - 1, Timestamp: element.key.Timestamp}
-				// return non nil elem as we have found item
-				return &Element{}
-			}
-			newEntryKey := SkippedSequenceEntry{Start: key.End + 1, End: element.key.End, Timestamp: element.key.Timestamp}
-			newCurrElemKey := SkippedSequenceEntry{Start: element.key.Start, End: key.Start - 1, Timestamp: element.key.Timestamp}
-			element.key = newCurrElemKey
-			// insert new elem at
-			list._set(newEntryKey)
+		}
+		if key.Start == element.key.Start {
+			element.key = SkippedSequenceEntry{Start: key.End + 1, End: element.key.End, Timestamp: element.key.Timestamp}
+			// return non nil elem as we have found item
 			return &Element{}
 		}
+		if key.End == element.key.End {
+			element.key = SkippedSequenceEntry{Start: element.key.Start, End: key.Start - 1, Timestamp: element.key.Timestamp}
+			// return non nil elem as we have found item
+			return &Element{}
+		}
+		newEntryKey := SkippedSequenceEntry{Start: key.End + 1, End: element.key.End, Timestamp: element.key.Timestamp}
+		newCurrElemKey := SkippedSequenceEntry{Start: element.key.Start, End: key.Start - 1, Timestamp: element.key.Timestamp}
+		element.key = newCurrElemKey
+		// insert new elem at
+		list._set(newEntryKey)
+		return &Element{}
 	}
 
 	return nil
@@ -317,7 +322,7 @@ func (list *SkipList) CompactList(timeNow, maxWait int64) int64 {
 	defer list.mutex.Unlock()
 
 	numCompacted := int64(0)
-	for c := list.Front(); c != nil; c = c.Next() {
+	for c := list._front(); c != nil; c = c.Next() {
 		if (timeNow - c.key.Timestamp) >= maxWait {
 			prevs := list.getPrevElementNodes(c.Key())
 			numCompacted += c.key.GetNumSequencesInEntry()
