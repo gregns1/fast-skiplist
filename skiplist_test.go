@@ -163,22 +163,28 @@ func TestConcurrency(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
+
+	list.Set(SkippedSequenceEntry{Start: 1, End: 1})
+
 	go func() {
 		for i := 0; i < 100000; i++ {
-			list.Set(SkippedSequenceEntry{Start: uint64(i), End: uint64(i)})
+			backSeq := list.backElem.Key().End
+			list.Set(SkippedSequenceEntry{Start: backSeq + 2, End: backSeq + 3})
 		}
 		wg.Done()
 	}()
 
 	go func() {
 		for i := 0; i < 100000; i++ {
-			list.Get(SkippedSequenceEntry{Start: uint64(i), End: uint64(i)})
+			backSeq := list.backElem.Key().End
+			list.Get(SkippedSequenceEntry{Start: backSeq + 2, End: backSeq + 3})
 		}
 		wg.Done()
 	}()
 
 	wg.Wait()
-	if list.Length != 100000 {
+	if list.Length != 100001 {
+		fmt.Println("Length after concurrent operations:", list.Length)
 		t.Fail()
 	}
 }
@@ -343,14 +349,14 @@ func TestGetFrontElem(t *testing.T) {
 	elem = list.Front()
 	require.NotNil(t, elem)
 	assert.Equal(t, uint64(1), elem.key.Start)
-	assert.Equal(t, uint64(1), elem.key.End)
+	assert.Equal(t, uint64(3), elem.key.End)
 }
 
 func TestRemoveRangeAcrossElements(t *testing.T) {
 	list := New()
 
 	list.Set(SkippedSequenceEntry{Start: 1, End: 3})
-	list.Set(SkippedSequenceEntry{Start: 4, End: 6})
+	list.Set(SkippedSequenceEntry{Start: 5, End: 6})
 
 	assert.Equal(t, 2, list.Length)
 
@@ -366,17 +372,17 @@ func TestRemoveRangeAcrossElements(t *testing.T) {
 	assert.Equal(t, uint64(6), elem.key.Start)
 	assert.Equal(t, uint64(6), elem.key.End)
 
-	list.Set(SkippedSequenceEntry{Start: 7, End: 7})
 	list.Set(SkippedSequenceEntry{Start: 8, End: 8})
+	list.Set(SkippedSequenceEntry{Start: 10, End: 10})
 
 	assert.Equal(t, 3, list.Length)
 
-	elem = list.Remove(SkippedSequenceEntry{Start: 6, End: 8})
+	elem = list.Remove(SkippedSequenceEntry{Start: 6, End: 10})
 	require.NotNil(t, elem)
 
-	elem = list.Get(SkippedSequenceEntry{Start: 7, End: 7})
-	require.Nil(t, elem)
 	elem = list.Get(SkippedSequenceEntry{Start: 8, End: 8})
+	require.Nil(t, elem)
+	elem = list.Get(SkippedSequenceEntry{Start: 10, End: 10})
 	require.Nil(t, elem)
 
 	assert.Equal(t, 0, list.Length)

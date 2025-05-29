@@ -40,6 +40,13 @@ func (list *SkipList) Set(key SkippedSequenceEntry) *Element {
 		return element
 	}
 
+	// if appending contiguous element to the back of the list, just extend the last element
+	if list.backElem != nil && key.Start == list.backElem.key.End+1 {
+		list.backElem.key.End = key.End
+		list.backElem.key.Timestamp = key.Timestamp
+		return list.backElem
+	}
+
 	element = &Element{
 		elementNode: elementNode{
 			next: make([]*Element, list.randLevel()),
