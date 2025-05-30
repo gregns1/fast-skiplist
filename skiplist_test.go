@@ -397,4 +397,31 @@ func TestCompact(t *testing.T) {
 	num := list.CompactList(time.Now().Unix(), 100)
 	assert.Equal(t, int64(6), num)
 	assert.Equal(t, 0, list.Length)
+
+	assert.Nil(t, list.backElem)
+}
+
+func TestRemovingFromLastElem(t *testing.T) {
+	list := New()
+
+	list.Set(SkippedSequenceEntry{Start: 1, End: 3, Timestamp: 0})
+
+	assert.Equal(t, 1, list.Length)
+	assert.Equal(t, uint64(1), list.backElem.key.Start)
+	assert.Equal(t, uint64(3), list.backElem.key.End)
+
+	elem := list.Remove(SkippedSequenceEntry{Start: 1, End: 3})
+	require.NotNil(t, elem)
+	assert.Equal(t, 0, list.Length)
+	assert.Nil(t, list.backElem)
+
+	// add elem back
+	list.Set(SkippedSequenceEntry{Start: 1, End: 3, Timestamp: 0})
+
+	// remove subset
+	elem = list.Remove(SkippedSequenceEntry{Start: 2, End: 2})
+	require.NotNil(t, elem)
+	assert.Equal(t, 2, list.Length)
+	assert.Equal(t, uint64(3), list.backElem.key.Start)
+	assert.Equal(t, uint64(3), list.backElem.key.End)
 }

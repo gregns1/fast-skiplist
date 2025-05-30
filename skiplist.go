@@ -144,6 +144,9 @@ func (list *SkipList) Remove(key SkippedSequenceEntry) *Element {
 			// update stats
 			list.NumSequencesInList -= key.GetNumSequencesInEntry()
 			list.Length--
+			if element == list.backElem {
+				list.backElem = nil
+			}
 			// return removed element
 			return element
 		}
@@ -222,6 +225,9 @@ func (list *SkipList) _remove(key SkippedSequenceEntry) *Element {
 				prevs[k].next[k] = v
 			}
 			list.Length--
+			if element == list.backElem {
+				list.backElem = nil
+			}
 			return element
 		}
 		if key.Start == element.key.Start {
@@ -338,6 +344,9 @@ func (list *SkipList) CompactList(timeNow, maxWait int64) int64 {
 			}
 			// remove element
 			list.Length--
+			if c == list.backElem {
+				list.backElem = nil
+			}
 		}
 	}
 	list.NumSequencesInList -= numCompacted
